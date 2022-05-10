@@ -193,6 +193,37 @@ def get_idxs_per_object(n):
     obj_ids = np.arange(n)
     return np.array([np.array([i for i in range(len(map_list)) if obj_id in map_list[i]]) for obj_id in obj_ids])
 
+def get_idxs_per_object_permutations(n):
+    res = []
+    map_list_close = list(combinations(np.arange(n), 2))
+    map_list_above = list(permutations(np.arange(n), 2))
+    for pair in combinations([0, 1, 2, 3, 4], 2):
+        pred_1_1 = [e for e in map_list_close if pair[0] in e]
+        pred_1_2 = [e for e in map_list_above if pair[0] in e]
+        pred_2_1 = []
+        pred_2_2 = []
+        for e in pred_1_1:
+            to_add = e
+            if pair[1] not in e:
+                if e[0] == pair[0]:
+                    to_add = (min(pair[1], e[1]), max(pair[1], e[1]))
+                elif e[1] == pair[0]:
+                    to_add = (min(e[0], pair[1]), max(e[0], pair[1]))
+            pred_2_1.append(to_add)
+        for e in pred_1_2:
+            to_add = e
+            if pair[1] not in e:
+                if e[0] == pair[0]:
+                    to_add = (pair[1], e[1])
+                elif e[1] == pair[0]:
+                    to_add = (e[0], pair[1])
+            pred_2_2.append(to_add)
+        idx_1 = [map_list_close.index(e) for e in pred_1_1] + [10 + map_list_above.index(e) for e in pred_1_2] 
+        idx_2 = [map_list_close.index(e) for e in pred_2_1] + [10 + map_list_above.index(e) for e in pred_2_2] 
+        res.append((np.array(idx_1), np.array(idx_2)))
+    
+    return res
+
 
 def get_eval_goals(instruction, n, nb_goals=1):
     """ Given an instruction and the total number of objects on the table, outputs a corresponding semantic goal"""
