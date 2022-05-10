@@ -13,20 +13,20 @@ scratch = os.environ['SCRATCH']
 # Make top level directories
 mkdir_p(job_directory)
 
-nb_seeds = 4
-models = ['relation_network', 'deep_sets']
+nb_seeds = 1
+models = ['relation_network', 'full_gn']
 
 for i in range(nb_seeds):
     for model in models:
-        job_file = os.path.join(job_directory, "main_{}%.slurm".format(model))
+        job_file = os.path.join(job_directory, "classes_{}%.slurm".format(model))
 
         with open(job_file, 'w') as fh:
             fh.writelines("#!/bin/bash\n")
             fh.writelines("#SBATCH --account=kcr@v100\n")
-            fh.writelines("#SBATCH --job-name=rebuttal_main_{}\n".format(model))
+            fh.writelines("#SBATCH --job-name=classes_semantic_{}\n".format(model))
             fh.writelines("#SBATCH --qos=qos_gpu-t3\n")
-            fh.writelines("#SBATCH --output=rebuttal_main_{}%_%j.out\n".format(model))
-            fh.writelines("#SBATCH --error=rebuttal_main_{}%_%j.out\n".format(model))
+            fh.writelines("#SBATCH --output=classes_semantic_{}%_%j.out\n".format(model))
+            fh.writelines("#SBATCH --error=classes_semantic_{}%_%j.out\n".format(model))
             fh.writelines("#SBATCH --time=19:59:59\n")
             fh.writelines("#SBATCH --ntasks=24\n")
             fh.writelines("#SBATCH --ntasks-per-node=1\n")
@@ -46,7 +46,7 @@ for i in range(nb_seeds):
             fh.writelines("export OMPI_MCA_btl_openib_warn_default_gid_prefix=0\n")
             fh.writelines("export OMPI_MCA_mpi_warn_on_fork=0\n")
 
-            fh.writelines("srun python -u -B train.py --algo 'semantic' --n-blocks 5 --n-epochs 1000 --n-cycles 50 --n-batches 30 --architecture {} --save-dir 'rebuttal_{}/' 2>&1 ".format(model, model))
+            fh.writelines("srun python -u -B train.py --algo 'semantic' --n-blocks 5 --n-epochs 1000 --n-cycles 50 --n-batches 30 --architecture {} --save-dir 'classes_{}/' 2>&1 ".format(model, model))
 
         os.system("sbatch %s" % job_file)
         sleep(1)
