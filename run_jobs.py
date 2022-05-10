@@ -33,7 +33,6 @@ for i in range(nb_seeds):
             fh.writelines("#SBATCH --gres=gpu:1\n")
             fh.writelines("#SBATCH --hint=nomultithread\n")
             fh.writelines("#SBATCH --array=0-0\n")
-            fh.writelines("#SBATCH --mem=40G\n")
 
             fh.writelines("module load pytorch-gpu/py3/1.4.0\n")
 
