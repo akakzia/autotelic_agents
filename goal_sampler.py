@@ -77,8 +77,14 @@ class GoalSampler:
                         self.discovered_goals_dict[str(above_predicates)].union(set([str(e) for e in unique_permutations]))
                     except KeyError:
                         self.discovered_goals_dict[str(above_predicates)] = set([str(e) for e in unique_permutations])
-                        self.above_to_id_dict[str(above_predicates)] = self.nb_classes
                         self.id_to_above_dict[self.nb_classes] = str(above_predicates)
+
+                        # Add all permutation to above_to_id dict
+                        for e in unique_permutations:
+                            above_e = e[-20:]
+                            self.above_to_id_dict[str(above_e)] = self.nb_classes
+                        # self.above_to_id_dict[str(above_predicates)] = self.nb_classes
+                        
                         self.nb_classes += 1
                     
                     self.discovered_goals += [e for e in unique_permutations if str(e) not in self.discovered_goals_str]
