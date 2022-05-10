@@ -22,8 +22,8 @@ class GoalSampler:
         self.discovered_goals_dict = {}
 
         self.nb_classes = 0
-        self.above_to_id_dict = {}
-        self.id_to_above_dict = {}
+        self.goal_to_id_dict = {}
+        self.id_to_goal_dict = {}
 
         self.continuous = args.algo == 'continuous'
 
@@ -45,7 +45,7 @@ class GoalSampler:
                 # goals = np.array(self.discovered_goals)[goal_ids]
                 # First select uniformly a class
                 class_id = np.random.randint(self.nb_classes)
-                goals_str = np.random.choice(list(self.discovered_goals_dict[self.id_to_above_dict[class_id]]), size=n_goals)
+                goals_str = np.random.choice(list(self.discovered_goals_dict[self.id_to_goal_dict[class_id]]), size=n_goals)
                 goals = np.array([np.fromstring(g_s[1:-1], dtype=float, sep=' ') for g_s in goals_str])
         return goals
 
@@ -61,40 +61,36 @@ class GoalSampler:
             all_episode_list = [e for eps in all_episodes for e in eps]
 
             for e in all_episode_list:
+                last_ag = e['ag_binary'][-1].copy()
                 # Add last achieved goal to memory if first time encountered
-                if str(e['ag_binary'][-1]) not in self.discovered_goals_str:
-                    above_predicates = e['ag_binary'][-1][-20:]
+                if str(last_ag) not in self.discovered_goals_str:
                     # get all permutations of achieved goal 
                     predicate_permutation_indexes = get_idxs_per_object_permutations(n=self.n_blocks)
-                    res = [e['ag_binary'][-1]]
+                    res = [last_ag]
                     for pair in predicate_permutation_indexes:
-                        current_vector = e['ag_binary'][-1].copy()
-                        current_vector[pair[0]] = e['ag_binary'][-1][pair[1]].copy()
-                        current_vector[pair[1]] = e['ag_binary'][-1][pair[0]].copy()
+                        current_vector = last_ag.copy()
+                        current_vector[pair[0]] = last_ag[pair[1]].copy()
+                        current_vector[pair[1]] = last_ag[pair[0]].copy()
                         res.append(current_vector)
                     unique_permutations = np.unique(np.array(res), axis=0)
                     try: 
-                        self.discovered_goals_dict[str(above_predicates)].union(set([str(e) for e in unique_permutations]))
+                        self.discovered_goals_dict[str(last_ag)].union(set([str(e) for e in unique_permutations]))
                     except KeyError:
-                        self.discovered_goals_dict[str(above_predicates)] = set([str(e) for e in unique_permutations])
-                        self.id_to_above_dict[self.nb_classes] = str(above_predicates)
+                        self.discovered_goals_dict[str(last_ag)] = set([str(e) for e in unique_permutations])
+                        self.id_to_goal_dict[self.nb_classes] = str(last_ag)
 
                         # Add all permutation to above_to_id dict
                         for e in unique_permutations:
-                            above_e = e[-20:]
-                            self.above_to_id_dict[str(above_e)] = self.nb_classes
-                        # self.above_to_id_dict[str(above_predicates)] = self.nb_classes
+                            self.goal_to_id_dict[str(e)] = self.nb_classes
                         
                         self.nb_classes += 1
                     
                     self.discovered_goals += [e for e in unique_permutations if str(e) not in self.discovered_goals_str]
                     self.discovered_goals_str += [str(e) for e in unique_permutations if str(e) not in self.discovered_goals_str]
-                    # self.discovered_goals.append(e['ag_binary'][-1].copy())
-                    # self.discovered_goals_str.append(str(e['ag_binary'][-1]))
         self.sync()
         for e in episodes:
-            last_above_ag = e['ag_binary'][-1][-20:]
-            oracle_id = self.above_to_id_dict[str(last_above_ag)]
+            last_ag = e['ag_binary'][-1]
+            oracle_id = self.goal_to_id_dict[str(last_ag)]
             e['last_ag_oracle_id'] = oracle_id
 
         return episodes
@@ -103,8 +99,8 @@ class GoalSampler:
         self.discovered_goals = MPI.COMM_WORLD.bcast(self.discovered_goals, root=0)
         self.discovered_goals_str = MPI.COMM_WORLD.bcast(self.discovered_goals_str, root=0)
         self.discovered_goals_dict = MPI.COMM_WORLD.bcast(self.discovered_goals_dict, root=0)
-        self.above_to_id_dict = MPI.COMM_WORLD.bcast(self.above_to_id_dict, root=0)
-        self.id_to_above_dict = MPI.COMM_WORLD.bcast(self.id_to_above_dict, root=0)
+        self.goal_to_id_dict = MPI.COMM_WORLD.bcast(self.goal_to_id_dict, root=0)
+        self.id_to_goal_dict = MPI.COMM_WORLD.bcast(self.id_to_goal_dict, root=0)
         self.nb_classes = MPI.COMM_WORLD.bcast(self.nb_classes, root=0)
 
     def build_batch(self, batch_size):
