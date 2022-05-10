@@ -98,6 +98,7 @@ class GoalSampler:
         self.discovered_goals_str = MPI.COMM_WORLD.bcast(self.discovered_goals_str, root=0)
         self.discovered_goals_dict = MPI.COMM_WORLD.bcast(self.discovered_goals_dict, root=0)
         self.above_to_id_dict = MPI.COMM_WORLD.bcast(self.above_to_id_dict, root=0)
+        self.id_to_above_dict = MPI.COMM_WORLD.bcast(self.id_to_above_dict, root=0)
         self.nb_classes = MPI.COMM_WORLD.bcast(self.nb_classes, root=0)
 
     def build_batch(self, batch_size):
